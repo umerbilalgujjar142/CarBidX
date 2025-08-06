@@ -37,6 +37,7 @@ export class AuctionGateway {
     auctions.forEach((auction) => {
       this.redisService.sub.subscribe(`auction:${auction.id}:bids`);
       this.redisService.sub.subscribe(`auction:${auction.id}:end`);
+      this.redisService.sub.subscribe(`auction:${auction.id}:bidError`);
     });
     this.redisService.sub.on('message', (channel, message) => {
       if (channel.endsWith(':bids')) {
@@ -47,6 +48,9 @@ export class AuctionGateway {
         this.server
           .to(`auction_${result.auctionId}`)
           .emit('auctionEnded', result);
+      } else if (channel.endsWith(':bidError')) {
+        const error = JSON.parse(message);
+        this.server.to(`auction_${error.auctionId}`).emit('bidError', error);
       }
     });
   }

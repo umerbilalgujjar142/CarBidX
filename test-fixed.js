@@ -21,6 +21,7 @@ let state = {
   auctionEnded: false,
   allBidsPlaced: false,
   resetCount: 0,
+  currentBid: 6000, // Track current bid
 };
 
 // Listen for connection
@@ -37,11 +38,12 @@ socket.on('connect', () => {
 
 socket.on('auctionReset', (data) => {
   state.resetReceived = true;
+  state.currentBid = 6000; // Reset current bid
 
   // Only place bid if we haven't already and this is the first reset
   if (!state.bidPlaced && state.resetCount === 1) {
     setTimeout(() => {
-      const amount = 6100 + userId * 100;
+      const amount = state.currentBid + 100 + userId * 100; // Ensure it's higher than current
       socket.emit('placeBid', {
         auctionId: 1,
         userId,
@@ -59,7 +61,7 @@ socket.on('joinedAuction', (data) => {
   if (!shouldResetAuction && !state.bidPlaced) {
     setTimeout(
       () => {
-        const amount = 6100 + userId * 100;
+        const amount = state.currentBid + 100 + userId * 100; // Ensure it's higher than current
         socket.emit('placeBid', {
           auctionId: 1,
           userId,
@@ -78,7 +80,7 @@ socket.on('bidError', (data) => {
   console.log(`User ${userId} bid error:`, data);
   // If bid failed, try again with a higher amount
   if (!state.bidConfirmed) {
-    const newAmount = 6100 + userId * 100 + 200;
+    const newAmount = state.currentBid + 200 + userId * 100;
     console.log(`User ${userId} retrying with amount:`, newAmount);
     setTimeout(() => {
       socket.emit('placeBid', {
@@ -95,6 +97,11 @@ socket.on('bidPending', (data) => {
 });
 
 socket.on('bidUpdate', (data) => {
+  console.log(`User ${userId} bid update:`, data);
+
+  // Update current bid
+  state.currentBid = data.amount;
+
   // Track if this is our own bid confirmation
   if (data.userId === userId && !state.bidConfirmed) {
     state.bidConfirmed = true;

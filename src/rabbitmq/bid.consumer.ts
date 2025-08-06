@@ -22,6 +22,10 @@ export class BidConsumer {
         ...bid,
       });
     } catch (error) {
+      console.error(
+        `Bid processing error for user ${data.userId}:`,
+        error.message,
+      );
       // Publish error notification
       try {
         await this.rabbitMQService.publishNotification({
@@ -29,7 +33,12 @@ export class BidConsumer {
           error: error.message,
           data: data,
         });
-      } catch {}
+      } catch (notificationError) {
+        console.error(
+          'Failed to publish error notification:',
+          notificationError,
+        );
+      }
     }
   }
 
@@ -49,12 +58,17 @@ export class BidConsumer {
         throw new WsException('Auction is not active');
       }
       if (data.amount <= auction.currentBid) {
-        throw new WsException('Bid must be higher than current bid');
+        throw new WsException(
+          `Bid must be higher than current bid (${auction.currentBid})`,
+        );
       }
+
+      // Simple update without optimistic locking
       const updatedAuction = await tx.auction.update({
         where: { id: data.auctionId },
         data: { currentBid: data.amount },
       });
+
       const bid = await tx.bid.create({
         data: {
           userId: data.userId,
@@ -63,21 +77,7 @@ export class BidConsumer {
           timestamp: new Date().toISOString(),
         },
       });
-      setTimeout(async () => {
-        await this.redisService.client.set(
-          `auction:${data.auctionId}:currentBid`,
-          data.amount,
-        );
-        await this.redisService.pub.publish(
-          `auction:${data.auctionId}:bids`,
-          JSON.stringify({
-            auctionId: data.auctionId,
-            userId: data.userId,
-            amount: data.amount,
-            timestamp: bid.timestamp,
-          }),
-        );
-      }, 0);
+
       return {
         auctionId: data.auctionId,
         userId: data.userId,
