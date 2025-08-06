@@ -102,7 +102,7 @@ export class AuctionGateway {
   }
 
   @SubscribeMessage('placeBid')
-  // @UseGuards(RateLimitGuard)
+  @UseGuards(RateLimitGuard) // Apply rate limiting guard , during testing comment this line if needed
   async handlePlaceBid(
     @MessageBody() data: any,
     @ConnectedSocket() client: Socket,
