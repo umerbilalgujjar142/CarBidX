@@ -75,9 +75,11 @@ socket.on('joinedAuction', (data) => {
 socket.on('bidSubmitted', (data) => {});
 
 socket.on('bidError', (data) => {
+  console.log(`User ${userId} bid error:`, data);
   // If bid failed, try again with a higher amount
   if (!state.bidConfirmed) {
     const newAmount = 6100 + userId * 100 + 200;
+    console.log(`User ${userId} retrying with amount:`, newAmount);
     setTimeout(() => {
       socket.emit('placeBid', {
         auctionId: 1,
