@@ -36,28 +36,20 @@ yarn install
 docker-compose up -d
 ```
 
-3. **Environment Setup**
-   Create a `.env` file:
-
-```env
-# Database Configuration
-DATABASE_URL="postgresql://postgres:password@localhost:5432/auction_db"
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=password
-DB_NAME=auction_db
-
 # Redis Configuration
+
 REDIS_URL=redis://localhost:6379
 
 # RabbitMQ Configuration
+
 RABBITMQ_URL=amqp://guest:guest@localhost:5672
 
 # Application Configuration
+
 PORT=4000
 NODE_ENV=development
-```
+
+````
 
 4. **Database Setup**
 
@@ -70,7 +62,7 @@ npx prisma migrate dev
 
 # Create test users
 yarn create-users
-```
+````
 
 5. **Start Application**
 
