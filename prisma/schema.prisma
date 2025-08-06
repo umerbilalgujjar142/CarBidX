@@ -1,0 +1,48 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  email     String   @unique
+  bids      Bid[]
+  wonAuctions Auction[] @relation("AuctionWinner")
+}
+
+model Auction {
+  id              Int      @id @default(autoincrement())
+  carId           Int
+  startTime       DateTime
+  endTime         DateTime
+  startingBid     Float
+  currentBid      Float
+  winnerId        Int?
+  status          String
+  bids            Bid[]
+  version         Int      @default(1) // For optimistic locking
+  winner          User?    @relation("AuctionWinner", fields: [winnerId], references: [id])
+}
+
+model Bid {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  auctionId Int
+  amount    Float
+  timestamp DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  auction   Auction  @relation(fields: [auctionId], references: [id])
+}
