@@ -1,35 +1,36 @@
-const { Client } = require('pg');
+const { PrismaClient } = require('./generated/prisma');
+
+const prisma = new PrismaClient();
 
 async function resetAuction() {
-  const client = new Client({
-    connectionString:
-      'postgresql://postgres:password@localhost:5432/auction_db',
-  });
-
   try {
-    await client.connect();
+    console.log('Resetting auction...');
 
-    const deleteResult = await client.query(
-      'DELETE FROM "Bid" WHERE "auctionId" = 1',
-    );
+    // Delete all bids for auction 1
+    const deletedBids = await prisma.bid.deleteMany({
+      where: { auctionId: 1 },
+    });
+    console.log(`Deleted ${deletedBids.count} bids`);
 
-    const updateResult = await client.query(`
-      UPDATE "Auction" 
-      SET "status" = 'active', "currentBid" = 6000, "winnerId" = NULL 
-      WHERE "id" = 1
-    `);
+    // Reset auction to initial state
+    const updatedAuction = await prisma.auction.update({
+      where: { id: 1 },
+      data: {
+        status: 'active',
+        currentBid: 6000,
+        winnerId: null,
+      },
+    });
 
-    const auctionResult = await client.query(
-      'SELECT * FROM "Auction" WHERE "id" = 1',
-    );
-
-    const bidCount = await client.query(
-      'SELECT COUNT(*) FROM "Bid" WHERE "auctionId" = 1',
-    );
+    console.log('Auction reset successfully:', {
+      id: updatedAuction.id,
+      status: updatedAuction.status,
+      currentBid: updatedAuction.currentBid,
+    });
   } catch (error) {
     console.error('Error resetting auction:', error);
   } finally {
-    await client.end();
+    await prisma.$disconnect();
   }
 }
 
